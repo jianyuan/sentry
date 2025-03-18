@@ -564,6 +564,8 @@ if (
       '.ngrok.dev',
       '.ngrok.io',
       '.ngrok.app',
+      '.ngrok-free.app',
+      '.pinggy.link',
     ],
     static: {
       directory: './src/sentry/static/sentry',

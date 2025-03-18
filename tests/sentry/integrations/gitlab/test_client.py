@@ -282,6 +282,85 @@ class GitlabRefreshAuthTest(GitLabClientTest):
 
         assert not rate_limit_info
 
+    @responses.activate
+    def test_get_merge_commit_sha_from_commit(self):
+        merge_commit_sha = "abc123"
+        test_cases = [
+            # Single merged commit
+            [
+                {
+                    "state": "merged",
+                    "merge_commit_sha": merge_commit_sha,
+                    "squash_commit_sha": None,
+                },
+            ],
+            # Single merged commit and one open merge request
+            [
+                {
+                    "state": "merged",
+                    "merge_commit_sha": merge_commit_sha,
+                    "squash_commit_sha": None,
+                },
+                {
+                    "state": "opened",
+                    "merge_commit_sha": None,
+                    "squash_commit_sha": None,
+                },
+            ],
+            # Single squash commit
+            [
+                {
+                    "state": "merged",
+                    "merge_commit_sha": None,
+                    "squash_commit_sha": merge_commit_sha,
+                },
+            ],
+            # Single squash commit and one open merge request
+            [
+                {
+                    "state": "merged",
+                    "merge_commit_sha": None,
+                    "squash_commit_sha": merge_commit_sha,
+                },
+                {
+                    "state": "opened",
+                    "merge_commit_sha": None,
+                    "squash_commit_sha": None,
+                },
+            ],
+        ]
+        commit_sha = "def456"
+
+        for merge_requests in test_cases:
+            with responses.RequestsMock() as rsps:
+                rsps.add(
+                    responses.GET,
+                    f"https://example.gitlab.com/api/v4/projects/{self.gitlab_id}/repository/commits/{commit_sha}/merge_requests",
+                    json=merge_requests,
+                )
+
+                sha = self.gitlab_client.get_merge_commit_sha_from_commit(
+                    repo=self.repo, sha=commit_sha
+                )
+                assert sha == merge_commit_sha
+
+    @responses.activate
+    def test_get_merge_commit_sha_from_commit_open_merge_request(self):
+        merge_commit_sha = "abc123"
+        merge_requests = [
+            {"state": "opened", "merge_commit_sha": merge_commit_sha, "squash_commit_sha": None},
+        ]
+        commit_sha = "def456"
+
+        responses.add(
+            responses.GET,
+            f"https://example.gitlab.com/api/v4/projects/{self.gitlab_id}/repository/commits/{commit_sha}/merge_requests",
+            json=merge_requests,
+        )
+
+        sha = self.gitlab_client.get_merge_commit_sha_from_commit(repo=self.repo, sha=commit_sha)
+        assert sha is None
+
 
 @control_silo_test
 class GitLabBlameForFilesTest(GitLabClientTest):

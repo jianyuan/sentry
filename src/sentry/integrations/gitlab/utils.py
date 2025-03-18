@@ -25,6 +25,7 @@ class GitLabApiClientPath:
     blame = "/projects/{project}/repository/files/{path}/blame"
     commit = "/projects/{project}/repository/commits/{sha}"
     commits = "/projects/{project}/repository/commits"
+    commit_merge_requests = "/projects/{project}/repository/commits/{sha}/merge_requests"
     compare = "/projects/{project}/repository/compare"
     diff = "/projects/{project}/repository/commits/{sha}/diff"
     file = "/projects/{project}/repository/files/{path}"

@@ -9,7 +9,6 @@ from django.urls import reverse
 from requests import PreparedRequest
 
 from sentry.identity.services.identity.model import RpcIdentity
-from sentry.integrations.base import IntegrationFeatureNotImplementedError
 from sentry.integrations.gitlab.blame import fetch_file_blames
 from sentry.integrations.gitlab.utils import GitLabApiClientPath
 from sentry.integrations.source_code_management.commit_context import (
@@ -309,8 +308,27 @@ class GitLabApiClient(IntegrationProxyClient, RepositoryClient, CommitContextCli
         """
         return self.get_cached(GitLabApiClientPath.commit.format(project=project_id, sha=sha))
 
-    def get_merge_commit_sha_from_commit(self, repo: str, sha: str) -> str | None:
-        raise IntegrationFeatureNotImplementedError
+    def get_merge_commit_sha_from_commit(self, repo: Repository, sha: str) -> str | None:
+        """
+        Get the merge commit sha from a commit sha
+        See https://docs.gitlab.com/api/commits/#list-merge-requests-associated-with-a-commit
+        """
+        project_id = repo.config["project_id"]
+        path = GitLabApiClientPath.commit_merge_requests.format(project=project_id, sha=sha)
+        response = self.get(path)
+
+        # Filter out non-merged merge requests
+        merge_requests = []
+        for merge_request in response:
+            if merge_request["state"] == "merged":
+                merge_requests.append(merge_request)
+
+        if len(merge_requests) != 1:
+            # the response should return a single merged PR, returning None if multiple
+            return None
+
+        merge_request = merge_requests[0]
+        return merge_request["merge_commit_sha"] or merge_request["squash_commit_sha"]
 
     def compare_commits(self, project_id, start_sha, end_sha):
         """Compare commits between two SHAs
