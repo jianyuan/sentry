@@ -29,7 +29,6 @@ from sentry.integrations.github.constants import (
     STACKFRAME_COUNT,
 )
 from sentry.integrations.github.tasks.language_parsers import PATCH_PARSERS
-from sentry.integrations.github.tasks.pr_comment import format_comment_url
 from sentry.integrations.github.tasks.utils import (
     GithubAPIErrorType,
     PullRequestFile,
@@ -92,6 +91,10 @@ OPEN_PR_ISSUE_TABLE_TOGGLE_TEMPLATE = """\
 OPEN_PR_ISSUE_DESCRIPTION_LENGTH = 52
 
 MAX_RECENT_ISSUES = 5000
+
+
+def format_comment_url(url, referrer):
+    return url + "?referrer=" + referrer
 
 
 def format_open_pr_comment(issue_tables: list[str]) -> str:
